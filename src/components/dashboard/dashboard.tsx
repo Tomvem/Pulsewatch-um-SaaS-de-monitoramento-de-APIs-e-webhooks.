@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Activity, Bell, Bolt, Clock3, Code2, ExternalLink, Gauge,
@@ -18,8 +19,9 @@ import type { HttpMethod, MonitorSummary } from "@/types/monitor";
 const emptyForm = { name: "", url: "", method: "GET" as HttpMethod, intervalMinutes: 5, timeoutMs: 10000, headers: "", alertWebhook: "" };
 
 type DashboardUser = { name: string; email: string };
+export type DashboardSection = "overview" | "monitores" | "incidentes" | "api" | "configuracoes";
 
-export function Dashboard({ user }: { user: DashboardUser }) {
+export function Dashboard({ user, section = "overview" }: { user: DashboardUser; section?: DashboardSection }) {
   const router = useRouter();
   const [monitors, setMonitors] = useState<MonitorSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -29,6 +31,8 @@ export function Dashboard({ user }: { user: DashboardUser }) {
   const [statusFilter, setStatusFilter] = useState<"ALL" | "UP" | "DOWN" | "PAUSED">("ALL");
   const [apiError, setApiError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [endpointsOpen, setEndpointsOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -152,12 +156,12 @@ export function Dashboard({ user }: { user: DashboardUser }) {
           <div><p className="text-[17px] font-extrabold tracking-tight">Pulsewatch</p><p className="text-[10px] font-medium uppercase tracking-[.2em] text-white/40">Monitor the moment</p></div>
         </div>
         <nav className="flex-1 space-y-1 p-4">
-          <NavItem icon={LayoutDashboard} label="Overview" active />
-          <NavItem icon={Server} label="Monitores" count={monitors.length} />
-          <NavItem icon={Bell} label="Incidentes" count={stats.incidents} />
-          <NavItem icon={Code2} label="API & Webhooks" />
+          <NavItem href="/" icon={LayoutDashboard} label="Overview" active={section === "overview"} />
+          <NavItem href="/monitores" icon={Server} label="Monitores" active={section === "monitores"} count={monitors.length} />
+          <NavItem href="/incidentes" icon={Bell} label="Incidentes" active={section === "incidentes"} count={stats.incidents} />
+          <NavItem href="/api-webhooks" icon={Code2} label="API & Webhooks" active={section === "api"} />
           <p className="px-3 pb-2 pt-7 text-[10px] font-bold uppercase tracking-[.18em] text-white/30">Workspace</p>
-          <NavItem icon={Settings} label="Definições" />
+          <NavItem href="/configuracoes" icon={Settings} label="Definições" active={section === "configuracoes"} />
         </nav>
         <div className="m-4 rounded-2xl border border-white/10 bg-white/[.04] p-4">
           <div className="mb-2 flex items-center gap-2 text-xs font-bold"><ShieldCheck className="h-4 w-4 text-lime" /> Ambiente demo</div>
@@ -174,10 +178,11 @@ export function Dashboard({ user }: { user: DashboardUser }) {
         <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-black/[.06] bg-canvas/90 px-5 backdrop-blur-xl md:px-8">
           <div className="flex items-center gap-3 lg:hidden"><div className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-lime"><Activity className="h-5 w-5" /></div><span className="font-extrabold">Pulsewatch</span></div>
           <div className="relative hidden w-full max-w-sm md:block"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Pesquisar monitores..." className="h-10 w-full rounded-xl border border-black/[.08] bg-white pl-10 pr-4 text-sm outline-none transition focus:border-teal/50 focus:ring-4 focus:ring-teal/5" /></div>
-          <div className="ml-auto flex items-center gap-2"><button className="relative grid h-10 w-10 place-items-center rounded-xl border border-black/[.08] bg-white text-slate-500"><Bell className="h-4 w-4" /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white" /></button><Button onClick={() => setModalOpen(true)}><Plus className="h-4 w-4" /><span className="hidden sm:inline">Novo monitor</span></Button></div>
+          <div className="ml-auto flex items-center gap-2"><button type="button" onClick={() => setNotificationsOpen(true)} aria-label="Abrir notificações" className="relative grid h-10 w-10 place-items-center rounded-xl border border-black/[.08] bg-white text-slate-500 transition hover:border-teal/30 hover:text-teal"><Bell className="h-4 w-4" />{stats.incidents > 0 && <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white" />}</button><Button onClick={() => setModalOpen(true)}><Plus className="h-4 w-4" /><span className="hidden sm:inline">Novo monitor</span></Button></div>
         </header>
 
         <div className="mx-auto max-w-[1500px] p-5 md:p-8">
+          {section === "overview" ? <>
           <section className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div><p className="mb-2 text-xs font-bold uppercase tracking-[.18em] text-teal">Visão geral</p><h1 className="text-3xl font-black tracking-[-.04em] md:text-4xl">Tudo sob controlo.</h1><p className="mt-2 text-sm text-slate-500">Acompanhe a saúde dos seus serviços num só lugar.</p></div>
             <div className="flex items-center gap-2 text-xs text-slate-400"><span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" /></span>Atualização automática a cada 30s</div>
@@ -186,10 +191,10 @@ export function Dashboard({ user }: { user: DashboardUser }) {
           {apiError && <div role="alert" className="mb-5 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"><span>{apiError}</span><button onClick={() => setApiError("")} className="rounded-lg p-1 hover:bg-red-100"><X className="h-4 w-4" /></button></div>}
 
           <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard icon={Server} label="Monitores ativos" value={stats.active.toString()} detail={`${stats.up} operacionais`} tone="teal" />
-            <MetricCard icon={Gauge} label="Latência média" value={`${stats.averageLatency} ms`} detail="Última verificação" tone="lime" />
-            <MetricCard icon={ShieldCheck} label="Disponibilidade" value={`${stats.active ? ((stats.up / stats.active) * 100).toFixed(1) : "0.0"}%`} detail="Estado atual" tone="blue" />
-            <MetricCard icon={Bolt} label="Incidentes" value={stats.incidents.toString().padStart(2, "0")} detail="No histórico recente" tone="red" />
+            <MetricCard icon={Server} label="Monitores ativos" value={stats.active.toString()} detail={`${stats.up} operacionais`} tone="teal" onClick={() => router.push("/monitores")} />
+            <MetricCard icon={Gauge} label="Latência média" value={`${stats.averageLatency} ms`} detail="Última verificação" tone="lime" onClick={() => router.push("/monitores")} />
+            <MetricCard icon={ShieldCheck} label="Disponibilidade" value={`${stats.active ? ((stats.up / stats.active) * 100).toFixed(1) : "0.0"}%`} detail="Estado atual" tone="blue" onClick={() => router.push("/monitores")} />
+            <MetricCard icon={Bolt} label="Incidentes" value={stats.incidents.toString().padStart(2, "0")} detail="No histórico recente" tone="red" onClick={() => router.push("/incidentes")} />
           </section>
 
           {loading ? <DashboardSkeleton /> : monitors.length === 0 ? <EmptyState onCreate={() => setModalOpen(true)} /> : (
@@ -216,21 +221,49 @@ export function Dashboard({ user }: { user: DashboardUser }) {
               {selected && <section className="rounded-2xl border border-black/[.07] bg-white p-5 shadow-soft"><div className="mb-4"><h2 className="font-extrabold">Atividade recente</h2><p className="mt-1 text-xs text-slate-400">Eventos e alterações de estado</p></div><div className="space-y-1">{selected.logs.slice(-5).reverse().map((log) => <div key={log.id} className="flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-slate-50"><span className={cn("h-2 w-2 rounded-full", log.status === "UP" ? "bg-emerald-500" : "bg-red-500")} /><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{log.status === "UP" ? `Resposta HTTP ${log.statusCode}` : log.error ?? "Sem resposta"}</p><p className="mt-0.5 text-[10px] text-slate-400">{format(new Date(log.checkedAt), "dd MMM, HH:mm:ss", { locale: ptBR })}</p></div><span className="text-xs font-bold text-slate-500">{log.latencyMs} ms</span></div>)}</div></section>}
             </div>
           )}
+          </> : <SecondaryPage section={section} monitors={monitors} incidents={stats.incidents} onCreate={() => setModalOpen(true)} onEndpoints={() => setEndpointsOpen(true)} />}
         </div>
       </main>
 
       {modalOpen && <CreateMonitorModal form={form} setForm={setForm} error={formError} saving={saving} onClose={() => setModalOpen(false)} onSubmit={createMonitor} />}
+      {endpointsOpen && <EndpointsModal onClose={() => setEndpointsOpen(false)} />}
+      {notificationsOpen && <NotificationsModal monitors={monitors} onClose={() => setNotificationsOpen(false)} onOpenIncidents={() => { setNotificationsOpen(false); router.push("/incidentes"); }} />}
     </div>
   );
 }
 
-function NavItem({ icon: Icon, label, active, count }: { icon: typeof Activity; label: string; active?: boolean; count?: number }) {
-  return <button className={cn("flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition", active ? "bg-white/10 text-white" : "text-white/50 hover:bg-white/5 hover:text-white")}><Icon className={cn("h-4 w-4", active && "text-lime")} /><span className="flex-1">{label}</span>{count !== undefined && <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">{count}</span>}</button>;
+function NavItem({ href, icon: Icon, label, active, count }: { href: string; icon: typeof Activity; label: string; active?: boolean; count?: number }) {
+  return <Link href={href} className={cn("flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition", active ? "bg-white/10 text-white" : "text-white/50 hover:bg-white/5 hover:text-white")}><Icon className={cn("h-4 w-4", active && "text-lime")} /><span className="flex-1">{label}</span>{count !== undefined && <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">{count}</span>}</Link>;
 }
 
-function MetricCard({ icon: Icon, label, value, detail, tone }: { icon: typeof Activity; label: string; value: string; detail: string; tone: string }) {
+function SecondaryPage({ section, monitors, incidents, onCreate, onEndpoints }: { section: Exclude<DashboardSection, "overview">; monitors: MonitorSummary[]; incidents: number; onCreate: () => void; onEndpoints: () => void }) {
+  const content = {
+    monitores: { eyebrow: "Monitorização", title: "Os seus monitores", description: "Veja e administre todos os serviços monitorizados." },
+    incidentes: { eyebrow: "Histórico", title: "Incidentes", description: "Acompanhe indisponibilidades e recuperações dos seus serviços." },
+    api: { eyebrow: "Integrações", title: "API & Webhooks", description: "Configure endpoints, headers e webhooks para receber alertas." },
+    configuracoes: { eyebrow: "Workspace", title: "Definições", description: "As preferências do espaço de trabalho estarão disponíveis aqui." },
+  }[section];
+
+  return <section><div className="mb-7"><p className="mb-2 text-xs font-bold uppercase tracking-[.18em] text-teal">{content.eyebrow}</p><h1 className="text-3xl font-black tracking-[-.04em] md:text-4xl">{content.title}</h1><p className="mt-2 text-sm text-slate-500">{content.description}</p></div>{section === "monitores" && <div className="space-y-3">{monitors.map((monitor) => <div key={monitor.id} className="flex items-center justify-between rounded-2xl border border-black/[.07] bg-white p-5 shadow-soft"><div><p className="font-extrabold">{monitor.name}</p><p className="mt-1 text-xs text-slate-400">{monitor.method} · {monitor.url}</p></div><StatusBadge status={monitor.status} /></div>)}<Button onClick={onCreate}><Plus className="h-4 w-4" />Novo monitor</Button></div>}{section === "incidentes" && <div className="rounded-2xl border border-black/[.07] bg-white p-6 shadow-soft"><p className="text-3xl font-black">{incidents}</p><p className="mt-1 text-sm text-slate-500">incidentes registados nos monitores atuais.</p></div>}{section === "api" && <div className="grid gap-4 md:grid-cols-2"><InfoCard title="Criar monitor" text="Defina URL, método, intervalo, headers e webhook de alerta." actionLabel="Novo monitor" onAction={onCreate} /><InfoCard title="Endpoints" text="Consulte as rotas REST disponíveis para os seus monitores." actionLabel="Ver endpoints" onAction={onEndpoints} /></div>}{section === "configuracoes" && <InfoCard title="Ambiente local" text="O workspace usa PostgreSQL local e atualiza os monitores automaticamente a cada 30 segundos." />}</section>;
+}
+
+function InfoCard({ title, text, actionLabel, onAction }: { title: string; text: string; actionLabel?: string; onAction?: () => void }) { return <div className="rounded-2xl border border-black/[.07] bg-white p-6 shadow-soft"><h2 className="font-extrabold">{title}</h2><p className="mt-2 text-sm leading-relaxed text-slate-500">{text}</p>{onAction && actionLabel && <Button className="mt-5" onClick={onAction}>{title === "Criar monitor" ? <Plus className="h-4 w-4" /> : <Code2 className="h-4 w-4" />}{actionLabel}</Button>}</div>; }
+
+function EndpointsModal({ onClose }: { onClose: () => void }) {
+  const [copied, setCopied] = useState<string | null>(null);
+  const endpoints = [{ method: "GET", path: "/api/monitors", description: "Lista os seus monitores." }, { method: "POST", path: "/api/monitors", description: "Cria um monitor." }, { method: "GET", path: "/api/monitors/:id", description: "Consulta um monitor." }, { method: "PATCH", path: "/api/monitors/:id", description: "Atualiza ou pausa um monitor." }, { method: "DELETE", path: "/api/monitors/:id", description: "Remove um monitor." }, { method: "POST", path: "/api/monitors/:id/check", description: "Executa uma verificação imediata." }];
+  async function copy(path: string) { await navigator.clipboard.writeText(path); setCopied(path); window.setTimeout(() => setCopied(null), 1_500); }
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-ink/60 p-4 backdrop-blur-sm" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><section role="dialog" aria-modal="true" aria-labelledby="endpoints-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-canvas p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-teal">Integrações</p><h2 id="endpoints-title" className="mt-1 text-2xl font-black">Endpoints da API</h2><p className="mt-2 text-sm text-slate-500">As rotas usam a sessão da conta conectada.</p></div><button type="button" onClick={onClose} aria-label="Fechar modal" className="grid h-9 w-9 place-items-center rounded-xl bg-black/5 hover:bg-black/10"><X className="h-4 w-4" /></button></div><div className="mt-6 space-y-2">{endpoints.map((endpoint) => <div key={`${endpoint.method}-${endpoint.path}`} className="flex items-center gap-3 rounded-xl border border-black/[.07] bg-white p-3"><span className="w-14 rounded-md bg-teal/10 px-2 py-1 text-center text-[10px] font-black text-teal">{endpoint.method}</span><div className="min-w-0 flex-1"><code className="text-sm font-bold text-ink">{endpoint.path}</code><p className="mt-0.5 text-xs text-slate-500">{endpoint.description}</p></div><button type="button" onClick={() => void copy(endpoint.path)} className="rounded-lg px-2 py-1 text-xs font-bold text-teal hover:bg-teal/10">{copied === endpoint.path ? "Copiado" : "Copiar"}</button></div>)}</div><p className="mt-5 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">Para testar no navegador, use primeiro o login. Os endpoints retornam apenas os dados do utilizador autenticado.</p></section></div>;
+}
+
+function MetricCard({ icon: Icon, label, value, detail, tone, onClick }: { icon: typeof Activity; label: string; value: string; detail: string; tone: string; onClick: () => void }) {
   const tones: Record<string, string> = { teal: "bg-teal/10 text-teal", lime: "bg-lime/40 text-[#567916]", blue: "bg-blue-50 text-blue-600", red: "bg-red-50 text-red-600" };
-  return <div className="rounded-2xl border border-black/[.07] bg-white p-5 shadow-soft"><div className="mb-5 flex items-center justify-between"><span className="text-xs font-semibold text-slate-500">{label}</span><div className={cn("grid h-9 w-9 place-items-center rounded-xl", tones[tone])}><Icon className="h-4 w-4" /></div></div><p className="text-2xl font-black tracking-tight">{value}</p><p className="mt-1 text-[11px] text-slate-400">{detail}</p></div>;
+  return <button type="button" onClick={onClick} className="rounded-2xl border border-black/[.07] bg-white p-5 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-teal/10"><div className="mb-5 flex items-center justify-between"><span className="text-xs font-semibold text-slate-500">{label}</span><div className={cn("grid h-9 w-9 place-items-center rounded-xl", tones[tone])}><Icon className="h-4 w-4" /></div></div><p className="text-2xl font-black tracking-tight">{value}</p><p className="mt-1 text-[11px] text-slate-400">{detail}</p></button>;
+}
+
+function NotificationsModal({ monitors, onClose, onOpenIncidents }: { monitors: MonitorSummary[]; onClose: () => void; onOpenIncidents: () => void }) {
+  const alerts = monitors.flatMap((monitor) => monitor.alerts.map((alert) => ({ ...alert, monitorName: monitor.name }))).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-ink/60 p-4 backdrop-blur-sm" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><section role="dialog" aria-modal="true" aria-labelledby="notifications-title" className="w-full max-w-md rounded-3xl bg-canvas p-6 shadow-2xl"><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-teal">Atualizações</p><h2 id="notifications-title" className="mt-1 text-2xl font-black">Notificações</h2></div><button type="button" onClick={onClose} aria-label="Fechar notificações" className="grid h-9 w-9 place-items-center rounded-xl bg-black/5 hover:bg-black/10"><X className="h-4 w-4" /></button></div><div className="mt-6 max-h-80 space-y-2 overflow-y-auto">{alerts.length ? alerts.map((alert) => <div key={alert.id} className="rounded-xl border border-black/[.07] bg-white p-3"><p className="text-sm font-bold">{alert.monitorName}</p><p className="mt-1 text-xs text-slate-500">{alert.message}</p></div>) : <p className="rounded-xl bg-white p-4 text-sm text-slate-500">Não há novas notificações.</p>}</div><Button className="mt-5 w-full" onClick={onOpenIncidents}>Ver incidentes</Button></section></div>;
 }
 
 function MonitorDetails({ monitor, checking, onCheck, onToggle, onDelete }: { monitor: MonitorSummary; checking: boolean; onCheck: () => void; onToggle: () => void; onDelete: () => void }) {

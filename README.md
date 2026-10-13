@@ -2,6 +2,10 @@
 
 Dashboard SaaS para monitorização de APIs e webhooks, com health checks automáticos, métricas de latência, histórico de disponibilidade e alertas por webhook. Os dados são persistidos em PostgreSQL com Prisma ORM.
 
+## Descrição
+
+O Pulsewatch permite criar monitores HTTP, acompanhar disponibilidade e latência, investigar incidentes e configurar webhooks de alerta. A aplicação inclui autenticação por sessão, uma API REST protegida e um worker dedicado para as verificações periódicas.
+
 ## Funcionalidades
 
 - Login e registo com passwords protegidas por `scrypt`, tokens de sessão armazenados como hash e cookie `httpOnly`.
@@ -32,6 +36,23 @@ npm run dev
 ```
 
 A aplicação estará em [http://localhost:3000](http://localhost:3000).
+
+### Sem Docker
+
+Também pode usar um PostgreSQL instalado localmente. Crie o banco e o utilizador conforme o `.env.example`, aplique as migrations e inicie a aplicação:
+
+```bash
+npm run db:generate
+npm run db:deploy
+npm run db:seed
+npm run dev
+```
+
+No Windows, se o terminal ainda não reconhecer o Node.js após a instalação, reinicie o VS Code ou execute temporariamente:
+
+```powershell
+$env:Path = "C:\Program Files\nodejs;$env:Path"
+```
 
 Conta demo:
 
@@ -95,6 +116,14 @@ npm run db:studio
 | `PATCH` | `/api/monitors/:id` | Atualizar ou pausar monitor |
 | `DELETE` | `/api/monitors/:id` | Eliminar monitor |
 | `POST` | `/api/monitors/:id/check` | Executar check imediato |
+
+## Navegação da interface
+
+- `/`: visão geral com métricas e resumo dos serviços.
+- `/monitores`: lista de monitores e criação de novos endpoints.
+- `/incidentes`: resumo de incidentes registados.
+- `/api-webhooks`: modal com os endpoints REST e cópia rápida das rotas.
+- `/configuracoes`: informações do ambiente de trabalho.
 
 ## Qualidade
 

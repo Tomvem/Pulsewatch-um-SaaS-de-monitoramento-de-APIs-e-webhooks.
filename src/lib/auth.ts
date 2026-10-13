@@ -11,7 +11,7 @@ function tokenHash(token: string) {
 }
 
 function publicUser(user: { id: string; name: string; email: string; createdAt: Date }) {
-  return { ...user, createdAt: user.createdAt.toISOString() };
+  return { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt.toISOString() };
 }
 
 export const authStore = {
